@@ -123,9 +123,15 @@ namespace NQuery.Syntax
             throw new NotSupportedException();
         }
 
-        int IList<TNode>.IndexOf(TNode item)
+        public int IndexOf(TNode item)
         {
-            throw new NotSupportedException();
+            for (var i = 0; i < _entries.Length; i++)
+            {
+                if (_entries[i].Node == item)
+                    return i;
+            }
+
+            return -1;
         }
 
         void IList<TNode>.Insert(int index, TNode item)
