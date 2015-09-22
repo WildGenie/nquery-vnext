@@ -207,33 +207,6 @@ namespace NQueryViewer
                 CurrentEditorView.Selection = span.Value;
         }
 
-        private async void UpdateDiagnostics()
-        {
-            if (CurrentEditorView == null)
-            {
-                DiagnosticGrid.UpdateGrid(null, null);
-            }
-            else
-            {
-                var document = CurrentEditorView.Workspace.CurrentDocument;
-                var semanticModel = await document.GetSemanticModelAsync();
-                var syntaxTree = semanticModel == null
-                    ? await document.GetSyntaxTreeAsync()
-                    : semanticModel.SyntaxTree;
-                var syntaxTreeDiagnostics = syntaxTree == null
-                    ? Enumerable.Empty<Diagnostic>()
-                    : syntaxTree.GetDiagnostics();
-                var semanticModelDiagnostics = semanticModel == null
-                    ? Enumerable.Empty<Diagnostic>()
-                    : semanticModel.GetDiagnostics();
-                var diagnostics = syntaxTreeDiagnostics.Concat(semanticModelDiagnostics);
-                var text = syntaxTree == null
-                    ? null
-                    : syntaxTree.Text;
-                DiagnosticGrid.UpdateGrid(diagnostics, text);
-            }
-        }
-
         private async void UpdateShowPlan()
         {
             if (CurrentEditorView == null)
@@ -321,8 +294,9 @@ namespace NQueryViewer
             Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() =>
             {
                 UpdateTree();
-                UpdateDiagnostics();
                 UpdateShowPlan();
+
+                DiagnosticGrid.Workspace = CurrentEditorView?.Workspace;
 
                 if (CurrentEditorView != null)
                     CurrentEditorView.Focus();
@@ -358,18 +332,20 @@ namespace NQueryViewer
         private void WorkspaceOnCurrentDocumentChanged(object sender, EventArgs e)
         {
             UpdateTree();
-            UpdateDiagnostics();
             UpdateShowPlan();
         }
 
         private void DiagnosticGridMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var diagnostic = DiagnosticGrid.SelectedDiagnostic;
-            if (diagnostic == null)
+            var span = DiagnosticGrid.SelectedDiagnosticSpan;
+            if (span == null)
                 return;
 
             if (CurrentEditorView != null)
-                CurrentEditorView.Selection = diagnostic.Span;
+            {
+                CurrentEditorView.Selection = span.Value;
+                CurrentEditorView.Focus();
+            }
         }
 
         private void DataGridAutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
